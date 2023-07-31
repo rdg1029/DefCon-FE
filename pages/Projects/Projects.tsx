@@ -1,36 +1,55 @@
-import { useEffect, useState } from "react";
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
 import styled from "styled-components";
 import * as API from "../../src/Common/API";
 import ProjectList from "./ProjectList";
 import ProjectSection from "./ProjectSection";
 
 const Projects = () => {
+  const [projectList, setProjectList] = useState<API.ProjectList>({count: 0, data: []});
   const [androidProjectList, setAndroidProjectList] = useState<Array<API.ProjectListItem>>([]);
   const [webProjectList, setWebProjectList] = useState<Array<API.ProjectListItem>>([]);
   const [selfRepairList, setSelfRepairList] = useState<Array<API.ProjectListItem>>([]);
   const [etcProjectList, setEtcProjectList] = useState<Array<API.ProjectListItem>>([]);
 
+  function updateProjectList(data:API.ProjectListItem, list: Array<API.ProjectListItem>, setList: Dispatch<SetStateAction<API.ProjectListItem[]>>) {
+    if (list.length === 0) {
+      setList([data]);
+      console.log(data.id);
+    }
+    else {
+      list.map(p => {
+        if (p.id === data.id) return;
+        setList([...list, data]);
+        console.log(data.id);
+      });
+    }
+  }
+
   useEffect(() => {
     API.getProjectList().then((apiResult: any) => {
-      if (!apiResult) return;
-      apiResult.data.map((projectData: API.ProjectListItem) => {
-        switch(projectData.data.category) {
-          case 'android':
-            setAndroidProjectList([...androidProjectList, projectData]);
-            return;
-          case 'web':
-            setWebProjectList([...webProjectList, projectData]);
-            return;
-          case 'repair':
-            setSelfRepairList([...selfRepairList, projectData]);
-            return;
-          default:
-            setEtcProjectList([...etcProjectList, projectData]);
-            return;
-        }
-      })
+      if (!apiResult || apiResult.count === 0) return;
+      setProjectList(apiResult);
     });
   }, []);
+
+  useEffect(() => {
+    projectList.data.map((projectData: API.ProjectListItem) => {
+      switch(projectData.data.category) {
+        case 'android':
+          updateProjectList(projectData, androidProjectList, setAndroidProjectList);
+          return;
+        case 'web':
+          updateProjectList(projectData, webProjectList, setWebProjectList);
+          return;
+        case 'repair':
+          updateProjectList(projectData, selfRepairList, setSelfRepairList);
+          return;
+        default:
+          updateProjectList(projectData, etcProjectList, setEtcProjectList);
+          return;
+      }
+    })
+  }, [projectList]);
 
   return (
     <ProjectWrapper>
